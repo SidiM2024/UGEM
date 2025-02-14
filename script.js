@@ -7,24 +7,22 @@ document.addEventListener("DOMContentLoaded", function () {
     const closePopup = document.getElementById("closePopup");
     let editingIndex = null;
 
-    // فتح النافذة عند الضغط على "إضافة مرشح جديد"
     addNewCandidateBtn.addEventListener("click", function () {
         popupForm.style.display = "flex";
+        form.reset();
+        editingIndex = null;
     });
 
-    // إغلاق النافذة عند الضغط على "X"
     closePopup.addEventListener("click", function () {
         popupForm.style.display = "none";
     });
 
-    // إغلاق النافذة عند الضغط خارجها
     window.addEventListener("click", function (event) {
         if (event.target === popupForm) {
             popupForm.style.display = "none";
         }
     });
 
-    // إضافة مرشح جديد
     form.addEventListener("submit", function (e) {
         e.preventDefault();
         const fullName = document.getElementById("fullName").value;
@@ -34,37 +32,40 @@ document.addEventListener("DOMContentLoaded", function () {
         const address = document.getElementById("address").value;
         const imageFile = document.getElementById("image").files[0];
 
-        let imageURL = "placeholder.jpg"; // صورة افتراضية
+        let imageURL = "placeholder.jpg";
         if (imageFile) {
             imageURL = URL.createObjectURL(imageFile);
         }
 
-        const newCandidate = {
-            id: candidateList.length + 1,
-            image: imageURL,
-            fullName,
-            phone,
-            faculty,
-            specialty,
-            address
-        };
-
         if (editingIndex !== null) {
-            candidateList[editingIndex] = newCandidate;
-            editingIndex = null;
+            candidateList[editingIndex] = {
+                ...candidateList[editingIndex],
+                fullName,
+                phone,
+                faculty,
+                specialty,
+                address,
+                image: imageFile ? imageURL : candidateList[editingIndex].image
+            };
         } else {
-            candidateList.push(newCandidate);
+            candidateList.push({
+                id: candidateList.length + 1,
+                image: imageURL,
+                fullName,
+                phone,
+                faculty,
+                specialty,
+                address
+            });
         }
 
         localStorage.setItem("candidates", JSON.stringify(candidateList));
         updateTable();
-        form.reset();
-        popupForm.style.display = "none"; // إغلاق النافذة بعد الإضافة
+        popupForm.style.display = "none";
     });
 
     function updateTable() {
-        tableBody.innerHTML = ""; // إعادة تحميل الجدول
-
+        tableBody.innerHTML = "";
         candidateList.forEach((candidate, index) => {
             const row = document.createElement("tr");
             row.innerHTML = `
@@ -84,16 +85,14 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // حذف مرشح
     window.deleteCandidate = function (index) {
         if (confirm("هل تريد حذف هذا المرشح؟")) {
-            candidateList.splice(index, 1); // حذف المرشح من القائمة
-            localStorage.setItem("candidates", JSON.stringify(candidateList)); // تحديث localStorage
-            updateTable(); // إعادة تحميل الجدول
+            candidateList.splice(index, 1);
+            localStorage.setItem("candidates", JSON.stringify(candidateList));
+            updateTable();
         }
     };
 
-    // تعديل مرشح
     window.editCandidate = function (index) {
         const candidate = candidateList[index];
         document.getElementById("fullName").value = candidate.fullName;
@@ -102,10 +101,9 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("specialty").value = candidate.specialty;
         document.getElementById("address").value = candidate.address;
 
-        editingIndex = index; // تعيين المؤشر إلى العنصر المراد تعديله
-
-        popupForm.style.display = "flex"; // إظهار نافذة التعديل
+        editingIndex = index;
+        popupForm.style.display = "flex";
     };
 
-    updateTable(); // تحديث الجدول عند تحميل الصفحة
+    updateTable();
 });
